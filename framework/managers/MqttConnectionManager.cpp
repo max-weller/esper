@@ -1,8 +1,6 @@
 #include "MqttConnectionManager.h"
 
 
-const Logger MqttConnectionManager::LOG = Logger("mqtt");
-
 MqttConnectionManager::MqttConnectionManager(const StateChangedCallback& stateChangedCallback,
                                              const MessageCallback& messageCallback) :
         state(State::DISCONNECTED, stateChangedCallback),
@@ -11,14 +9,14 @@ MqttConnectionManager::MqttConnectionManager(const StateChangedCallback& stateCh
         messageCallback(messageCallback) {
     this->reconnectTimer.initializeMs(2000, TimerDelegate(&MqttConnectionManager::connect, this));
 
-    LOG.log("Initialized");
+    debug_d("Initialized");
 }
 
 MqttConnectionManager::~MqttConnectionManager() {
 }
 
 void MqttConnectionManager::connect() {
-    LOG.log("Connecting");
+    debug_d("Connecting");
 
     this->reconnectTimer.stop();
     this->state.set(State::CONNECTING);
@@ -30,23 +28,23 @@ void MqttConnectionManager::connect() {
     } else {
         this->state.set(State::DISCONNECTED);
 
-        LOG.log("Failed to connect - reconnecting");
+        debug_d("Failed to connect - reconnecting");
         this->reconnectTimer.start();
     }
 }
 
 void MqttConnectionManager::subscribe(const String &topic) {
     this->client.subscribe(topic);
-    LOG.log("Subscribed to:", topic);
+    debug_d("Subscribed to: %s", topic.c_str());
 }
 
 void MqttConnectionManager::publish(const String &topic, const String &message, const bool& retain) {
-    LOG.log("Publishing message to", topic, ":", message);
+    debug_d("Publishing message to %s:%s", topic.c_str(), message.c_str());
     this->client.publish(topic, message, retain);
 }
 
 void MqttConnectionManager::setWill(const String& topic, const String& message, const bool& retained) {
-    LOG.log("Setlast will to ", topic, ":", message);
+    debug_d("Set last will to %s: %s", topic.c_str(), message.c_str());
 	this->client.setWill(topic, message, 0, retained);
 }
 
@@ -56,9 +54,9 @@ MqttConnectionManager::State MqttConnectionManager::getState() const {
 
 void MqttConnectionManager::onDisconnected(TcpClient &client, bool flag) {
     if (flag) {
-        LOG.log("Disconnected");
+        debug_d("Disconnected");
     } else {
-        LOG.log("Unreachable");
+        debug_d("Unreachable");
     }
 
     this->state.set(State::DISCONNECTED);
@@ -66,8 +64,8 @@ void MqttConnectionManager::onDisconnected(TcpClient &client, bool flag) {
 }
 
 void MqttConnectionManager::onMessageReceived(const String topic, const String message) {
-    LOG.log("Received topic:", topic);
-    LOG.log("Received message:", message);
+    debug_d("Received topic: %s", topic.c_str());
+    debug_d("Received message: %s", message.c_str());
 
     this->messageCallback(topic, message);
 }

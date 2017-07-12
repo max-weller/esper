@@ -19,7 +19,7 @@ Heartbeat::~Heartbeat() {
 void Heartbeat::onStateChanged(const State& state) {
     switch (state) {
         case State::CONNECTED: {
-            LOG.log("Start awaiting heartbeats");
+            debug_d("Start awaiting heartbeats");
             this->timer.start();
 
             break;
@@ -27,7 +27,7 @@ void Heartbeat::onStateChanged(const State& state) {
 
         case State::DISCONNECTED: {
             // Heartbeats are likely to miss if disconnected
-            LOG.log("Stop awaiting heartbeats");
+            debug_d("Stop awaiting heartbeats");
             this->timer.stop();
 
             break;
@@ -37,6 +37,6 @@ void Heartbeat::onStateChanged(const State& state) {
 
 void Heartbeat::onMessageReceived(const String& topic, const String& message) {
     // Handle incoming heartbeat
-    LOG.log("Heartbeat");
+    debug_d("Heartbeat");
     this->timer.restart();
 }

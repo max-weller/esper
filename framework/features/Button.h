@@ -11,7 +11,6 @@ class Button : public Feature<name> {
     constexpr static const char* const OFF = "0";
 
 protected:
-    using Feature<name>::LOG;
 
 public:
     using Callback = Observed<bool>::Callback;
@@ -25,7 +24,7 @@ public:
 
 protected:
     virtual void publishCurrentState() {
-        LOG.log("Current state:", this->state);
+        debug_d("Current state: %d", (bool)this->state);
 
         this->publish("", this->state ? ON : OFF, true);
     }
@@ -36,8 +35,8 @@ private:
     virtual void onInterrupt()  {
         const bool state = this->onEdge(digitalRead(gpio) == !inverted);
 
-        LOG.log("Old state:", this->state);
-        LOG.log("New state:", state);
+        debug_d("Old state: %d", (bool)this->state);
+        debug_d("New state: %d", state);
 
         if (state != this->state) {
             this->state.set(state);

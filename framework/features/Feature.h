@@ -1,14 +1,12 @@
 #ifndef FEATURE_H
 #define FEATURE_H
 
-#include "../util/Logger.h"
 #include "../Device.h"
 
 
 template<const char* const name>
 class Feature : public ServiceBase {
 protected:
-    static const Logger LOG;
 
     Feature(Device* const device) :
             device(device) {
@@ -61,8 +59,5 @@ private:
     }
 };
 
-
-template<const char* const name>
-const Logger Feature<name>::LOG = Logger(name);
 
 #endif

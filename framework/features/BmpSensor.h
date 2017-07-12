@@ -9,7 +9,6 @@ template<const char* const name, const int scl_gpio = 14, const int sda_gpio = 1
 class BmpSensor : public Feature<name> {
     
 protected:
-    using Feature<name>::LOG;
     BMP180 barometer;
 
 public:
@@ -38,9 +37,9 @@ protected:
             return;
         }
         long currentPressure = barometer.GetPressure();
-        LOG.log("currentPressure:", currentPressure);
+        debug_d("currentPressure: %l", currentPressure);
         float currentTemperature = barometer.GetTemperature();
-        LOG.log("currentTemperature:", currentTemperature);
+        debug_d("currentTemperature: %f", currentTemperature);
 
         this->publish("pressure", String(currentPressure), true);
         this->publish("temperature", String(currentTemperature), true);

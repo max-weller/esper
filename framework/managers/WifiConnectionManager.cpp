@@ -2,37 +2,36 @@
 #include "util/Strings.h"
 
 
-const Logger WifiConnectionManager::LOG = Logger("wifi");
 
 WifiConnectionManager::WifiConnectionManager(const StateChangedCallback& callback) :
         state(State::DISCONNECTED, callback) {
     this->reconnectTimer.initializeMs(2000, TimerDelegate(&WifiConnectionManager::connect, this));
 
-    LOG.log("Initalized");
+    debug_d("Initalized");
 }
 
 WifiConnectionManager::~WifiConnectionManager() {
 }
 
 void WifiConnectionManager::connect() {
-    LOG.log("Connecting");
+    debug_d("Connecting");
 
     this->reconnectTimer.stop();
 
-    LOG.log("SSID:", WIFI_SSID);
-    LOG.log("PW:", WIFI_PWD);
+    debug_d("SSID: %s", WIFI_SSID);
+    debug_d("PW: %s", WIFI_PWD);
     WifiStation.config(WIFI_SSID, WIFI_PWD);
-    LOG.log("Configured");
+    debug_d("Configured");
 
     WifiAccessPoint.enable(false);
-    LOG.log("Wifi Access Point disabled");
+    debug_d("Wifi Access Point disabled");
 
     WifiStation.enable(true);
-    LOG.log("Wifi Station enabled");
+    debug_d("Wifi Station enabled");
 
     this->state.set(State::CONNECTING);
 
-    LOG.log("Waiting for connection");
+    debug_d("Waiting for connection");
     WifiEvents.onStationGotIP(StationGotIPDelegate(&WifiConnectionManager::onStationConfigured, this));
     WifiEvents.onStationConnect(StationConnectDelegate(&WifiConnectionManager::onStationConnected, this));
     WifiEvents.onStationDisconnect(StationDisconnectDelegate(&WifiConnectionManager::onStationDisconnected, this));
@@ -51,7 +50,7 @@ const String& WifiConnectionManager::getCurrentBSSID() const {
 }
 
 void WifiConnectionManager::onStationConfigured(IPAddress ip, IPAddress mask, IPAddress gateway) {
-    LOG.log("Configured:", ip, mask, gateway);
+    debug_d("Configured: ip=%s, mask=%s, gw=%s", String(ip).c_str(), String(mask).c_str(), String(gateway).c_str());
 
     if (this->state.set(State::CONNECTED)) {
         this->reconnectTimer.stop();
@@ -59,14 +58,14 @@ void WifiConnectionManager::onStationConfigured(IPAddress ip, IPAddress mask, IP
 }
 
 void WifiConnectionManager::onStationConnected(String ssid, uint8_t, uint8_t bssid[6], uint8_t reason) {
-    LOG.log("Connected");
+    debug_d("Connected");
 
     this->ssid = ssid;
     this->bssid = Strings::formatMAC(bssid);
 }
 
 void WifiConnectionManager::onStationDisconnected(String, uint8_t, uint8_t[6], uint8_t reason) {
-    LOG.log("Disconnected");
+    debug_d("Disconnected");
 
     this->ssid = String();
     this->bssid = String();

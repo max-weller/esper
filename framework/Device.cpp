@@ -16,7 +16,6 @@ String calculateTopicBase() {
 }
 
 
-const Logger Device::LOG = Logger("device");
 
 const String Device::TOPIC_BASE = calculateTopicBase();
 
@@ -42,15 +41,15 @@ Device::Device() :
 #endif
     this->add(&info);
 
-    LOG.log("Initialized");
-    LOG.log("Base Path:", Device::TOPIC_BASE);
+    debug_d("Initialized");
+    debug_d("Base Path: %s", Device::TOPIC_BASE.c_str());
 }
 
 Device::~Device() {
 }
 
 void Device::start() {
-    LOG.log("Starting");
+    debug_d("Starting");
 
     // Set last will to publish status as offline
     this->mqttConnectionManager.setWill(Device::TOPIC_BASE + "/status", "OFFLINE", true);
@@ -58,11 +57,11 @@ void Device::start() {
     // Start connecting to the network
     this->wifiConnectionManager.connect();
 
-    LOG.log("Started");
+    debug_d("Started");
 }
 
 void Device::reboot() {
-    LOG.log("Restarting System");
+    debug_w("Restarting System");
     System.restart();
 }
 
@@ -73,7 +72,7 @@ void Device::registerSubscription(const String& topic, const MessageCallback& ca
 void Device::add(ServiceBase* const service) {
     if (!services.contains(service)) {
         services.addElement(service);
-        LOG.log("Added service:", service->getName());
+        debug_i("Added service: %s", service->getName());
     }
 }
 
@@ -105,19 +104,19 @@ void Device::publish(const String& topic, const String& message, const bool& ret
 void Device::onWifiStateChanged(const WifiConnectionManager::State& state) {
     switch (state) {
         case WifiConnectionManager::State::CONNECTED: {
-            LOG.log("WiFi state changed: Connected");
+            debug_i("WiFi state changed: Connected");
             this->ntpClient.requestTime();
             this->mqttConnectionManager.connect();
             break;
         }
 
         case WifiConnectionManager::State::DISCONNECTED: {
-            LOG.log("WiFi state changed: Disconnected");
+            debug_i("WiFi state changed: Disconnected");
             break;
         }
 
         case WifiConnectionManager::State::CONNECTING: {
-            LOG.log("WiFi state changed: Connecting");
+            debug_i("WiFi state changed: Connecting");
             break;
         }
     }
@@ -126,7 +125,7 @@ void Device::onWifiStateChanged(const WifiConnectionManager::State& state) {
 void Device::onMqttStateChanged(const MqttConnectionManager::State& state) {
     switch (state) {
         case MqttConnectionManager::State::CONNECTED: {
-            LOG.log("MQTT state changed: Connected \\o/");
+            debug_i("MQTT state changed: Connected \\o/");
 
             // Publish status as online
             this->mqttConnectionManager.publish(Device::TOPIC_BASE + "/status", "ONLINE", true);
@@ -146,7 +145,7 @@ void Device::onMqttStateChanged(const MqttConnectionManager::State& state) {
         }
 
         case MqttConnectionManager::State::DISCONNECTED: {
-            LOG.log("MQTT state changed: Disconnected");
+            debug_i("MQTT state changed: Disconnected");
 
             // Inform all services about new state
             for (int i = 0; i < this->services.count(); i++) {
@@ -157,7 +156,7 @@ void Device::onMqttStateChanged(const MqttConnectionManager::State& state) {
         }
 
         case MqttConnectionManager::State::CONNECTING: {
-            LOG.log("MQTT state changed: Connecting");
+            debug_i("MQTT state changed: Connecting");
             break;
         }
     }
@@ -176,10 +175,10 @@ void Device::onTimeUpdated(NtpClient& client, time_t curr) {
     auto prev = RTC.getRtcSeconds();
     RTC.setRtcSeconds(curr);
 
-    LOG.log("Time updated:", DateTime(curr).toISO8601());
+    debug_i("Time updated: %s", DateTime(curr).toISO8601().c_str());
 
     if (abs(curr - prev) > 60 * 60) {
-        LOG.log("Clock differs to much - rebooting");
+        debug_e("Clock differs to much - rebooting");
         this->reboot();
     }
 }
@@ -189,8 +188,8 @@ void init() {
     System.setCpuFrequency(eCF_160MHz);
 
     // Initialize logging
-    Serial.end();
-    Logger::init();
+    Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
+    Serial.systemDebugOutput(true); // Debug output to serial
 
     // Create the device and start it
     createDevice()->start();

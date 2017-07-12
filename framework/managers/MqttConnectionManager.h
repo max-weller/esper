@@ -3,12 +3,10 @@
 
 #include <SmingCore/SmingCore.h>
 
-#include "../util/Logger.h"
 #include "../util/Observed.h"
 
 
 class MqttConnectionManager {
-    static const Logger LOG;
 
     MqttConnectionManager(MqttConnectionManager const&) = delete;
     MqttConnectionManager& operator=(MqttConnectionManager const&) = delete;

@@ -1,9 +1,6 @@
 #ifndef SERVICE_H
 #define SERVICE_H
 
-#include "../util/Logger.h"
-
-
 class Device;
 
 
@@ -28,7 +25,6 @@ public:
 template<const char* const name>
 class Service : public ServiceBase {
 protected:
-    static const Logger LOG;
 
     Service(Device* const device) :
             device(device) {
@@ -50,7 +46,5 @@ protected:
 };
 
 
-template<const char* const name>
-const Logger Service<name>::LOG = Logger(name);
 
 #endif
