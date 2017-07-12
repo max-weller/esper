@@ -3,12 +3,10 @@
 
 #include <SmingCore/SmingCore.h>
 
-#include "../util/Logger.h"
 #include "../util/Observed.h"
 
 
 class WifiConnectionManager {
-    static const Logger LOG;
 
     WifiConnectionManager(WifiConnectionManager const&) = delete;
     WifiConnectionManager& operator=(WifiConnectionManager const&) = delete;

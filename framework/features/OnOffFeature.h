@@ -10,7 +10,6 @@ class OnOffFeature : public Feature<name> {
     constexpr static const char* const OFF = "0";
 
 protected:
-    using Feature<name>::LOG;
 
 public:
     OnOffFeature(Device* const device, bool initial_state = false) :
@@ -22,14 +21,14 @@ public:
 
         this->registerSubscription("set", Device::MessageCallback(&OnOffFeature::onMessageReceived, this));
 
-        LOG.log("Initialized");
+        debug_d("Initialized");
     }
 
     void set(bool state) {
         if (this->state = state) {
-            LOG.log("Turning on");
+            debug_d("Turning on");
         } else {
-            LOG.log("Turning off");
+            debug_d("Turning off");
         }
 
         digitalWrite(gpio, state == !invert);
@@ -58,7 +57,7 @@ private:
             this->set(false);
 
         } else {
-            LOG.log("Unknown message received:", message);
+            debug_d("Unknown message received: %s", message.c_str());
         }
 
         this->lastChange = now;

@@ -3,7 +3,6 @@
 
 #include <SmingCore/SmingCore.h>
 
-#include "util/Logger.h"
 #include "managers/WifiConnectionManager.h"
 #include "managers/MqttConnectionManager.h"
 
@@ -19,7 +18,6 @@
 
 
 class Device {
-    static const Logger LOG;
 
     Device(Device const&) = delete;
     Device& operator=(Device const&) = delete;

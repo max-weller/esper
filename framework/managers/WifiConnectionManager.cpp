@@ -1,35 +1,34 @@
 #include "WifiConnectionManager.h"
 
 
-const Logger WifiConnectionManager::LOG = Logger("wifi");
 
 WifiConnectionManager::WifiConnectionManager(const StateChangedCallback& callback) :
         state(State::DISCONNECTED, callback) {
     this->reconnectTimer.initializeMs(2000, TimerDelegate(&WifiConnectionManager::connect, this));
 
-    LOG.log("Initalized");
+    debug_d("Initalized");
 }
 
 WifiConnectionManager::~WifiConnectionManager() {
 }
 
 void WifiConnectionManager::connect() {
-    LOG.log("Connecting");
+    debug_d("Connecting");
 
     this->reconnectTimer.stop();
 
-    LOG.log("SSID:", WIFI_SSID);
-    LOG.log("PW:", WIFI_PWD);
+    debug_d("SSID: %s", WIFI_SSID);
+    debug_d("PW: %s", WIFI_PWD);
     WifiStation.config(WIFI_SSID, WIFI_PWD);
-    LOG.log("Configured");
+    debug_d("Configured");
 
     WifiAccessPoint.enable(false);
-    LOG.log("Wifi Access Point disabled");
+    debug_d("Wifi Access Point disabled");
 
     WifiStation.enable(true);
-    LOG.log("Wifi Station enabled");
+    debug_d("Wifi Station enabled");
 
-    LOG.log("Waiting for connection");
+    debug_d("Waiting for connection");
     WifiStation.waitConnection(ConnectionDelegate(&WifiConnectionManager::onConnectOk, this), 10,
                                ConnectionDelegate(&WifiConnectionManager::onConnectFail, this));
 
@@ -42,7 +41,7 @@ WifiConnectionManager::State WifiConnectionManager::getState() const {
 
 
 void WifiConnectionManager::onConnectOk() {
-    LOG.log("Connected");
+    debug_d("Connected");
 
     if (this->state.set(State::CONNECTED)) {
         this->reconnectTimer.stop();
@@ -50,7 +49,7 @@ void WifiConnectionManager::onConnectOk() {
 }
 
 void WifiConnectionManager::onConnectFail() {
-    LOG.log("Disconnected");
+    debug_d("Disconnected");
 
     if (this->state.set(State::DISCONNECTED)) {
         this->reconnectTimer.start();

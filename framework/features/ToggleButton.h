@@ -7,7 +7,6 @@
 template<const char* const name, uint16_t gpio, bool inverted = true, bool activeEdge = true>
 class ToggleButton : public Button<name, gpio, inverted> {
 protected:
-    using Button<name, gpio, inverted>::LOG;
 
 public:
     using Callback = typename Button<name, gpio, inverted>::Callback;
@@ -20,13 +19,13 @@ public:
 
 protected:
     virtual bool onEdge(const bool& edge) {
-        LOG.log("Edge:", edge);
+        debug_d("Edge: %d", edge);
 
         if (edge == activeEdge) {
             this->state = !this->state;
         }
 
-        LOG.log("State:", this->state);
+        debug_d("State: %d", this->state);
         return this->state;
     }
 

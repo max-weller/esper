@@ -14,7 +14,6 @@ class Persisted {
     static_assert(flash_size % SPI_FLASH_SEC_SIZE == 0,
                   "Flash size must be aligned by sectors");
 
-    static const Logger LOG;
 
     using sequence_t = uint32_t;
 
@@ -50,7 +49,7 @@ public:
 
         // If first record is invalid, reinitialize the storage
         if (record.checksum != checksum(record)) {
-            LOG.log("Invalid first record - Formatting");
+            debug_d("Invalid first record - Formatting");
 
             // Erase the first sector
             flash_erase_sector(address.sector);
@@ -64,7 +63,7 @@ public:
                         record);
 
         } else {
-            LOG.log("Valid first record - Searching last record");
+            debug_d("Valid first record - Searching last record");
 
             // Start scanning with the sequence from the first record
             sequence_t sequence = record.sequence;
@@ -94,7 +93,7 @@ public:
                 sequence = next(sequence);
             }
 
-            LOG.log("Last valid record found with sequence", this->sequence, "at", this->address.sector, "@", this->address.offset);
+            debug_d("Last valid record found with sequence %d at %d@%d", this->sequence, this->address.sector, this->address.offset);
         }
     }
 
@@ -129,7 +128,7 @@ public:
         record.value = value;
         record.checksum = checksum(record);
 
-        LOG.log("Persisting record", sequence, "to", address.sector, "@", address.offset);
+        debug_d("Persisting record %d to %d@%d", sequence, address.sector, address.offset);
         flash_write(address,
                     record);
 
@@ -142,7 +141,7 @@ private:
     inline static void flash_erase_sector(const uint16_t& sect) {
         const auto& ret = spi_flash_erase_sector(flash_addr / SPI_FLASH_SEC_SIZE + sect);
         if (ret != SPI_FLASH_RESULT_OK) {
-            LOG.log("Flash: Erase failed:", sect);
+            debug_d("Flash: Erase failed: %d", sect);
         }
     }
 
@@ -152,7 +151,7 @@ private:
                                           (uint32_t*) &record,
                                           sizeof(record_t));
         if (ret != SPI_FLASH_RESULT_OK) {
-            LOG.log("Flash: Write failed:", addr.sector, "@", addr.offset);
+            debug_d("Flash: Write failed: %d@%d", addr.sector, addr.offset);
         }
     }
 
@@ -162,7 +161,7 @@ private:
                                          (uint32_t*) &record,
                                          sizeof(record_t));
         if (ret != SPI_FLASH_RESULT_OK) {
-            LOG.log("Flash: Read failed:", addr.sector, "@", addr.offset);
+            debug_d("Flash: Read failed: %d@%d", addr.sector, addr.offset);
         }
     }
 
@@ -207,8 +206,5 @@ private:
     value_t value;
 };
 
-
-template<typename value_t, uint32_t flash_addr, uint32_t flash_size>
-const Logger Persisted<value_t, flash_addr, flash_size>::LOG = Logger("persisted");
 
 #endif
