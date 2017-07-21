@@ -43,6 +43,10 @@ void MqttConnectionManager::publish(const String &topic, const String &message, 
     this->client.publish(topic, message, retain);
 }
 
+void MqttConnectionManager::setWill(String topic, String message, int QoS, bool retained /* = false*/) {
+	this->client.setWill(topic.c_str(), message.c_str(), QoS, retained);
+}
+
 MqttConnectionManager::State MqttConnectionManager::getState() const {
     return this->state;
 }

@@ -31,6 +31,8 @@ public:
 
     void publish(const String &topic, const String &message, const bool& retain = false);
 
+    void setWill(String topic, String message, int QoS, bool retained /* = false*/);
+
     State getState() const;
 
 private:
