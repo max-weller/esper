@@ -39,6 +39,13 @@ public:
     void publish(const String &topic, const String &message, const bool& retain = false);
 
     void add(ServiceBase* const service);
+    
+protected:
+    void onHttp_Index(HttpRequest &request, HttpResponse &response);
+
+#ifdef HTTP_PORT
+    HttpServer http;
+#endif
 
 private:
     void onWifiStateChanged(const WifiConnectionManager::State& state);

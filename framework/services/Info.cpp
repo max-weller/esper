@@ -15,18 +15,22 @@ Info::Info(Device* const device)
     // Read bootloader config
     const rboot_config rbootconf = rboot_get_config();
 
-    LOG.log("Device:", DEVICE);
-    LOG.log("SDK Version:", system_get_sdk_version());
-    LOG.log("Boot Version:", system_get_boot_version());
-    LOG.log("Boot Mode:", system_get_boot_mode());
-    LOG.log("ESPer Version:", VERSION);
-    LOG.log("Free Heap:", system_get_free_heap_size());
-    LOG.log("CPU Frequency (MHz):", system_get_cpu_freq());
-    LOG.log("System Chip ID:", String(system_get_chip_id(), 16));
-    LOG.log("SPI Flash ID:", String(spi_flash_get_id(), 16));
-    LOG.log("ROM Selected:", rbootconf.current_rom);
-    LOG.log("ROM Slot 0:", rbootconf.roms[0]);
-    LOG.log("ROM Slot 1:", rbootconf.roms[1]);
+    debug_i("");
+    debug_i("");
+    debug_i("Device: %s", DEVICE);
+    debug_i("SDK Version: v%s", system_get_sdk_version());
+    debug_i("Boot: v%u (%u)", system_get_boot_version(), system_get_boot_mode());
+    debug_i("ESPer Version: v%s", VERSION);
+    debug_i("Free Heap: %d", system_get_free_heap_size());
+    debug_i("CPU Frequency: %d MHz", system_get_cpu_freq());
+    debug_i("System Chip ID: %x", system_get_chip_id());
+    debug_i("SPI Flash ID: %x", spi_flash_get_id());
+    debug_i("ROM Selected: %d", rbootconf.current_rom);
+    debug_i("ROM Slot 0: %08X", rbootconf.roms[0]);
+    debug_i("ROM Slot 1: %08X", rbootconf.roms[1]);
+    debug_i("");
+    debug_i("");
+
 }
 
 Info::~Info() {
