@@ -1,6 +1,9 @@
 #include "Device.h"
 #include <stdio.h>
 
+#ifdef REMOTE_UDP_LOG_IP
+#include "util/RemoteUdpLogging.h"
+#endif
 
 ServiceBase::ServiceBase() {
 }
@@ -58,6 +61,11 @@ void Device::start() {
     this->wifiConnectionManager.connect();
 
     debug_d("Started");
+
+#ifdef REMOTE_UDP_LOG_IP
+    remote_udp_log_enable(IPAddress(REMOTE_UDP_LOG_IP), REMOTE_UDP_LOG_PORT);
+#endif
+
 }
 
 void Device::reboot() {
