@@ -30,7 +30,7 @@ public:
     Device();
     virtual ~Device();
 
-    void start();
+    virtual void start();
 
     void reboot();
 
@@ -46,6 +46,8 @@ protected:
 #ifdef HTTP_PORT
     HttpServer http;
 #endif
+    WifiConnectionManager wifiConnectionManager;
+    MqttConnectionManager mqttConnectionManager;
 
 private:
     void onWifiStateChanged(const WifiConnectionManager::State& state);
@@ -55,9 +57,6 @@ private:
     void onMqttMessageReceived(const String& topic, const String& message);
 
     void onTimeUpdated(NtpClient& client, time_t time);
-
-    WifiConnectionManager wifiConnectionManager;
-    MqttConnectionManager mqttConnectionManager;
 
     NtpClient ntpClient;
 
