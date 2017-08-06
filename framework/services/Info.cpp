@@ -12,25 +12,13 @@ Info::Info(Device* const device)
     // Record time then starting up
     this->startupTime = RTC.getRtcSeconds();
 
-    // Read bootloader config
-    const rboot_config rbootconf = rboot_get_config();
-
     debug_i("");
-    debug_i("");
-    debug_i("Device: %s", DEVICE);
-    debug_i("SDK Version: v%s", system_get_sdk_version());
-    debug_i("Boot: v%u (%u)", system_get_boot_version(), system_get_boot_mode());
-    debug_i("ESPer Version: v%s", VERSION);
-    debug_i("Free Heap: %d", system_get_free_heap_size());
-    debug_i("CPU Frequency: %d MHz", system_get_cpu_freq());
-    debug_i("System Chip ID: %x", system_get_chip_id());
-    debug_i("SPI Flash ID: %x", spi_flash_get_id());
-    debug_i("ROM Selected: %d", rbootconf.current_rom);
-    debug_i("ROM Slot 0: %08X", rbootconf.roms[0]);
-    debug_i("ROM Slot 1: %08X", rbootconf.roms[1]);
-    debug_i("");
+    debug_i("%s", this->getInfo());
     debug_i("");
 
+#ifdef HTTP_PORT
+	this->device->http.addPath("/info", HttpPathDelegate(&Info::onHttp_Info, this));
+#endif
 }
 
 Info::~Info() {
@@ -56,19 +44,50 @@ void Info::onStateChanged(const State& state) {
     }
 }
 
+String Info::getInfo() {
+    // Read bootloader config
+    const rboot_config rbootconf = rboot_get_config();
+
+    return StringSumHelper("") +
+            "Device: " + DEVICE + "\n" +
+            "ESPer Version: " + VERSION + "\n" +
+            "SDK Version: " + system_get_sdk_version() + "\n" +
+            "Boot: v" + String(system_get_boot_version()) + " (" + String(system_get_boot_mode()) + ")\n" +
+            "System Chip ID: " + String(system_get_chip_id(), 16) + "\n" +
+            "IP: " + WifiStation.getIP().toString() + "\n" +
+            "MAC: " + WifiStation.getMAC() + "\n" +
+            "SPI Flash ID: " + String(spi_flash_get_id(), 16) + "\n" +
+            "CPU Frequency: " + String(system_get_cpu_freq()) + " MHz\n" +
+            "ROM Selected: " + String(rboot_get_current_rom()) + "\n" +
+            "ROM Slots: " + String(rbootconf.roms[0], 16) + "/" + String(rbootconf.roms[1], 16) + "\n" +
+            "Startup Time: " + String(this->startupTime) + "\n" +
+            "Connect Time: " + String(this->connectTime) + "\n" +
+            "Updated Time: " + String(RTC.getRtcSeconds()) + "\n";
+}
+
 void Info::publish() {
     LOG.log("Publishing device info");
 
-    this->device->publish(Device::TOPIC_BASE + "/info", StringSumHelper("") +
-                                                        "DEVICE=" + DEVICE + "\n" +
-                                                        "ESPER=" + VERSION + "\n" +
-                                                        "SDK=" + system_get_sdk_version() + "\n" +
-                                                        "BOOT=v" + String(system_get_boot_version()) + "\n" +
-                                                        "CHIP=" + String(system_get_chip_id(), 16) + "\n" +
-                                                        "FLASH=" + String(spi_flash_get_id(), 16) + "\n" +
-                                                        "ROM=" + String(rboot_get_current_rom()) + "\n" +
-                                                        "TIME_STARTUP=" + String(this->startupTime) + "\n" +
-                                                        "TIME_CONNECT=" + String(this->connectTime) + "\n" +
-                                                        "TIME_UPDATED=" + String(RTC.getRtcSeconds()) + "\n",
-                          true);
+    this->device->publish(Device::TOPIC_BASE + "/info", this->getInfo(), true);
 }
+
+#ifdef HTTP_PORT
+void Info::onHttp_Info(HttpRequest &request, HttpResponse &response)
+{
+    response.setContentType(ContentType::TEXT);
+    response.setHeader("Server", "ham");
+	
+    response.sendString(this->getInfo());
+
+    char s[128];
+    for (int i = 0; i < this->device->services.count(); i++) {
+        sprintf(s, "Service: %s\n", this->device->services[i]->getName() );
+        response.sendString(s);
+    }
+
+    for (unsigned int i = 0; i < this->device->messageCallbacks.count(); i++) {
+        sprintf(s, "Endpoint: %s\n", this->device->messageCallbacks.keyAt(i).c_str() );
+        response.sendString(s);
+    }
+}
+#endif

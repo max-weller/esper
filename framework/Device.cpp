@@ -59,7 +59,6 @@ void Device::start() {
 
 #ifdef HTTP_PORT
 	http.listen(HTTP_PORT);
-	http.addPath("/", HttpPathDelegate(&Device::onHttp_Index, this));
 #endif
 
     debug_d("Started");
@@ -180,48 +179,19 @@ void Device::onTimeUpdated(NtpClient& client, time_t curr) {
 #ifdef HTTP_PORT
 void Device::onHttp_Index(HttpRequest &request, HttpResponse &response)
 {
-    response.setContentType(ContentType::TEXT);
+    response.setContentType(ContentType::HTML);
     response.setHeader("Server", "ham");
-	char s[128];
-    const rboot_config rbootconf = rboot_get_config();
-                sprintf(s, "Device: %s\n", DEVICE);
-    response.sendString(s);
-                sprintf(s, "SDK: v%s\n", system_get_sdk_version());
-    response.sendString(s);
-                sprintf(s, "Boot: v%u (%u)\n", system_get_boot_version(), system_get_boot_mode());
-    response.sendString(s);
-                sprintf(s, "ESPER: v%s\n", VERSION);
-    response.sendString(s);
-                sprintf(s, "Free Heap: %d\n", system_get_free_heap_size());
-    response.sendString(s);
-                sprintf(s, "CPU Frequency: %d MHz\n", system_get_cpu_freq());
-    response.sendString(s);
-                sprintf(s, "System Chip ID: %x\n", system_get_chip_id());
-    response.sendString(s);
-                sprintf(s, "SPI Flash ID: %x\n", spi_flash_get_id());
-    response.sendString(s);
-                sprintf(s, "ROM Selected: %d\n", rbootconf.current_rom);
-    response.sendString(s);
-                sprintf(s, "ROM Slot 0: %08X\n", rbootconf.roms[0]);
-    response.sendString(s);
-                sprintf(s, "ROM Slot 1: %08X\n", rbootconf.roms[1]);
-    response.sendString(s);
-                sprintf(s, "Time: %d\n", RTC.getRtcSeconds());
-    response.sendString(s);
-                sprintf(s, "IP: %s\n", WifiStation.getIP().toString().c_str() );
-    response.sendString(s);
-                sprintf(s, "MAC: %s\n", WifiStation.getMAC().c_str() );
-    response.sendString(s);
+	
+    response.sendString("<h2>" DEVICE " " + String(system_get_chip_id(), 16) + "</h2>");
 
+    char s[128];
     for (int i = 0; i < this->services.count(); i++) {
-                sprintf(s, "Service: %s\n", this->services[i]->getName() );
+        sprintf(s, "<li><a href='/%s'>%s</a></li>\n"
+                , this->services[i]->getName()
+                , this->services[i]->getName() );
         response.sendString(s);
     }
 
-    for (unsigned int i = 0; i < this->messageCallbacks.count(); i++) {
-                sprintf(s, "Endpoint: %s\n", this->messageCallbacks.keyAt(i).c_str() );
-        response.sendString(s);
-    }
 }
 #endif
 

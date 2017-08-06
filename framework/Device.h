@@ -40,12 +40,16 @@ public:
 
     void add(ServiceBase* const service);
     
-protected:
-    void onHttp_Index(HttpRequest &request, HttpResponse &response);
-
 #ifdef HTTP_PORT
     HttpServer http;
 #endif
+    Vector<ServiceBase*> services;
+
+    HashMap<String, MessageCallback> messageCallbacks;
+
+protected:
+    void onHttp_Index(HttpRequest &request, HttpResponse &response);
+
     WifiConnectionManager wifiConnectionManager;
     MqttConnectionManager mqttConnectionManager;
 
@@ -59,10 +63,6 @@ private:
     void onTimeUpdated(NtpClient& client, time_t time);
 
     NtpClient ntpClient;
-
-    Vector<ServiceBase*> services;
-
-    HashMap<String, MessageCallback> messageCallbacks;
 
 #if HEARTBEAT_ENABLED
     Heartbeat heartbeat;
