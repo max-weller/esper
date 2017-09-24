@@ -21,6 +21,13 @@ void WifiConnectionManager::connect() {
     debug_d("SSID: %s", WIFI_SSID);
     debug_d("PW: %s", WIFI_PWD);
     WifiStation.config(WIFI_SSID, WIFI_PWD);
+
+    uint8 hwaddr[6] = {0};
+    wifi_get_macaddr(STATION_IF, hwaddr);
+    char hostname[40];
+    sprintf(hostname, "Esper_%02x%02x%02x_" DEVICE, hwaddr[3], hwaddr[4], hwaddr[5]);
+    wifi_station_set_hostname(hostname);
+
     debug_d("Configured");
 
     WifiAccessPoint.enable(false);
