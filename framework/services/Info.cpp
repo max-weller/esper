@@ -57,59 +57,32 @@ void Info::onStateChanged(const State& state) {
     }
 }
 
-String Info::dump() const {
-    debug_d("Publishing device info");
-
-    StaticJsonBuffer<1024> json;
-
-    auto& info = json.createObject();
-    info.set("device", DEVICE);
-    info.set("chip_id", String(system_get_chip_id(), 16));
-    info.set("flash_id", String(spi_flash_get_id(), 16));
-
-    auto& version = info.createNestedObject("version");
-    version.set("esper", VERSION);
-    version.set("sdk", system_get_sdk_version());
-    version.set("boot", system_get_boot_version());
-
-    auto& boot = info.createNestedObject("boot");
-    boot.set("rom", rboot_get_current_rom());
-
-    auto& time = info.createNestedObject("time");
-    time.set("startup", this->startupTime);
-    time.set("connect", this->connectTime);
-    time.set("updated", RTC.getRtcSeconds());
-
-    auto& network = info.createNestedObject("network");
-    network.set("mac", WifiStation.getMAC());
-    network.set("ip", WifiStation.getIP().toString());
-    network.set("mask", WifiStation.getNetworkMask().toString());
-    network.set("gateway", WifiStation.getNetworkGateway().toString());
-
-    auto& wifi = info.createNestedObject("wifi");
-    wifi.set("ssid", this->device->getWifi().getCurrentSSID());
-    wifi.set("bssid", this->device->getWifi().getCurrentBSSID());
-    wifi.set("rssi", WifiStation.getRssi());
-    wifi.set("channel", WifiStation.getChannel());
-
-    auto& services = info.createNestedArray("services");
-    for (int i = 0; i < this->device->getServices().count(); i++) {
-        services.add(this->device->getServices().at(i)->getName());
-    }
-
-    auto& endpoints = info.createNestedArray("endpoints");
-    for (unsigned int i = 0; i < this->device->getSubscriptions().count(); i++) {
-        endpoints.add(this->device->getSubscriptions().keyAt(i));
-    }
-
-    String payload;
-    info.prettyPrintTo(payload);
-
-    return payload;
-}
-
 void Info::publish() {
-    this->device->publish(Device::TOPIC_BASE + "/info", this->dump(), true);
+    this->device->publish(Device::TOPIC_BASE + "/$localip", WifiStation.getIP().toString(), true);
+    this->device->publish(Device::TOPIC_BASE + "/$mac", WifiStation.getMAC(), true);
+    this->device->publish(Device::TOPIC_BASE + "/$fw/name", DEVICE, true);
+    this->device->publish(Device::TOPIC_BASE + "/$fw/version", VERSION);
+    this->device->publish(Device::TOPIC_BASE + "/$impl/sdk_version", system_get_sdk_version());
+    this->device->publish(Device::TOPIC_BASE + "/$impl/boot_version", system_get_boot_version());
+    this->device->publish(Device::TOPIC_BASE + "/$impl/chip_id", String(system_get_chip_id(), 16), true);
+    this->device->publish(Device::TOPIC_BASE + "/$impl/flash_id", String(spi_flash_get_id(), 16), true);
+
+    this->device->publish(Device::TOPIC_BASE + "/$impl/boot_rom", rboot_get_current_rom());
+    this->device->publish(Device::TOPIC_BASE + "/$impl/startup_time", this->startupTime);
+    this->device->publish(Device::TOPIC_BASE + "/$impl/connect_time", this->connectTime);
+    this->device->publish(Device::TOPIC_BASE + "/$impl/updated_time", RTC.getRtcSeconds());
+
+    this->device->publish(Device::TOPIC_BASE + "/$impl/wifi_ssid", this->device->getWifi().getCurrentSSID());
+    this->device->publish(Device::TOPIC_BASE + "/$impl/wifi_bssid", this->device->getWifi().getCurrentBSSID());
+    this->device->publish(Device::TOPIC_BASE + "/$stats/signal", WifiStation.getRssi());
+    this->device->publish(Device::TOPIC_BASE + "/$impl/wifi_channel", WifiStation.getChannel());
+
+    String nodes;
+    for (int i = 0; i < this->device->getServices().count(); i++) {
+        if (i > 0) nodes += ",";
+        nodes += this->device->getServices().at(i)->getName();
+    }
+    this->device->publish(Device::TOPIC_BASE + "/$nodes", nodes);
 }
 
 #ifdef INFO_HTTP_ENABLED
