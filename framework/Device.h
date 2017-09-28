@@ -16,6 +16,40 @@
 #include "services/Update.h"
 #endif
 
+enum class PropertyDataType {
+    Undefined,
+    Integer,
+    Float,
+    Boolean,
+    String,
+    Enum,
+    Command
+};
+
+class NodeProperty {
+public:
+    MqttConnectionManager::MessageCallback setCallback;
+    PropertyDataType dataType;
+    String displayName;
+    String format;
+    String unit;
+    NodeProperty() {}
+    NodeProperty(const MqttConnectionManager::MessageCallback& callback, PropertyDataType dataType, const String& displayName, 
+        const String& format = "", const String& unit = "") :
+        setCallback(callback), dataType(dataType), displayName(displayName), format(format), unit(unit) {
+    }
+    String dataTypeString() const {
+        switch(this->dataType) {
+        case PropertyDataType::Undefined: return "";
+        case PropertyDataType::Integer: return "integer";
+        case PropertyDataType::Float: return "float";
+        case PropertyDataType::Boolean: return "boolean";
+        case PropertyDataType::String: return "string";
+        case PropertyDataType::Enum: return "enum";
+        case PropertyDataType::Command: return "CMD";
+        }
+    }
+};
 
 class Device {
 
@@ -34,7 +68,7 @@ public:
 
     void reboot();
 
-    void registerSubscription(const String& topic, const MessageCallback& callback);
+    void registerProperty(const String& topic, const NodeProperty& prop);
 
     void publish(const String &topic, const String &message, const bool& retain = false);
 
@@ -44,7 +78,7 @@ public:
     const MqttConnectionManager& getMqtt() const;
 
     const Vector<ServiceBase*>& getServices() const;
-    const HashMap<String, MessageCallback>& getSubscriptions() const;
+    const HashMap<String, NodeProperty>& getSubscriptions() const;
 
 private:
     void onWifiStateChanged(const WifiConnectionManager::State& state);
@@ -62,7 +96,7 @@ private:
 
     Vector<ServiceBase*> services;
 
-    HashMap<String, MessageCallback> messageCallbacks;
+    HashMap<String, NodeProperty> messageCallbacks;
 
 #if HEARTBEAT_ENABLED
     Heartbeat heartbeat;

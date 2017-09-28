@@ -55,7 +55,7 @@ void Device::start() {
     debug_d("Starting");
 
     // Set last will to publish status as offline
-    this->mqttConnectionManager.setWill(Device::TOPIC_BASE + "/status", "OFFLINE", true);
+    this->mqttConnectionManager.setWill(Device::TOPIC_BASE + "/$online", "false", true);
 
     // Start connecting to the network
     this->wifiConnectionManager.connect();
@@ -73,8 +73,8 @@ void Device::reboot() {
     System.restart();
 }
 
-void Device::registerSubscription(const String& topic, const MessageCallback& callback) {
-    this->messageCallbacks[topic] = callback;
+void Device::registerProperty(const String& topic, const NodeProperty& prop) {
+    this->messageCallbacks[topic] = prop;
 }
 
 void Device::add(ServiceBase* const service) {
@@ -96,7 +96,7 @@ const Vector<ServiceBase*>& Device::getServices() const {
     return this->services;
 }
 
-const HashMap<String, Device::MessageCallback>& Device::getSubscriptions() const {
+const HashMap<String, NodeProperty>& Device::getSubscriptions() const {
     return this->messageCallbacks;
 }
 
@@ -136,12 +136,28 @@ void Device::onMqttStateChanged(const MqttConnectionManager::State& state) {
             debug_i("MQTT state changed: Connected \\o/");
 
             // Publish status as online
-            this->mqttConnectionManager.publish(Device::TOPIC_BASE + "/status", "ONLINE", true);
+            this->mqttConnectionManager.publish(Device::TOPIC_BASE + "/$online", "true", true);
 
             // Subscribe for all known registered callbacks
             for (unsigned int i = 0; i < this->messageCallbacks.count(); i++) {
                 const auto topic = this->messageCallbacks.keyAt(i);
-                this->mqttConnectionManager.subscribe(topic);
+                const NodeProperty& opt = this->messageCallbacks.valueAt(i);
+                if (opt.dataType == PropertyDataType::Command) {
+                    this->mqttConnectionManager.subscribe(topic);
+                    continue;
+                }
+                if (opt.setCallback) {
+                    this->mqttConnectionManager.subscribe(topic + "/set");
+                    this->mqttConnectionManager.publish(topic + "/$settable", "true", true);
+                }
+                if (opt.dataType != PropertyDataType::Undefined)
+                    this->mqttConnectionManager.publish(topic + "/$datatype", opt.dataTypeString(), true);
+                if (opt.unit != "")
+                    this->mqttConnectionManager.publish(topic + "/$unit", opt.unit, true);
+                if (opt.format != "")
+                    this->mqttConnectionManager.publish(topic + "/$format", opt.format, true);
+                if (opt.displayName != "")
+                    this->mqttConnectionManager.publish(topic + "/$name", opt.displayName, true);
             }
 
             // Inform all services about new state
@@ -172,10 +188,12 @@ void Device::onMqttStateChanged(const MqttConnectionManager::State& state) {
 
 void Device::onMqttMessageReceived(const String& topic, const String& message) {
     // Dispatch message to registered feature handler
-    auto i = this->messageCallbacks.indexOf(topic);
+    const String strippedTopic = topic.endsWith("/set") ? topic.substring(0, topic.length() - 4) : topic;
+    debug_i("mqtt received '%s'", strippedTopic.c_str());
+    auto i = this->messageCallbacks.indexOf(strippedTopic);
     if (i != -1) {
-        const auto& callback = this->messageCallbacks.valueAt(i);
-        callback(topic.substring(Device::TOPIC_BASE.length()+1), message);
+        const auto& opt = this->messageCallbacks.valueAt(i);
+        opt.setCallback(strippedTopic.substring(Device::TOPIC_BASE.length()+1), message);
     }
 }
 

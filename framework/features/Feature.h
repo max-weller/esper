@@ -35,10 +35,9 @@ protected:
                               retain);
     }
 
-    void registerSubscription(const String& topic,
-                              const Device::MessageCallback& callback) {
-        this->device->registerSubscription(buildTopic(topic),
-                                           callback);
+    void registerProperty(const String& topic,
+                              const NodeProperty& prop) {
+        this->device->registerProperty(buildTopic(topic), prop);
     }
 
     virtual void publishCurrentState() = 0;

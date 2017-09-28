@@ -6,8 +6,8 @@
 
 template<const char* const name, uint16_t gpio, bool invert = false, uint16_t damper = 0>
 class OnOffFeature : public Feature<name> {
-    constexpr static const char* const ON = "1";
-    constexpr static const char* const OFF = "0";
+    constexpr static const char* const ON = "true";
+    constexpr static const char* const OFF = "false";
 
 protected:
 
@@ -19,7 +19,8 @@ public:
         pinMode(gpio, OUTPUT);
         digitalWrite(gpio, this->state == !invert);
 
-        this->registerSubscription("set", Device::MessageCallback(&OnOffFeature::onMessageReceived, this));
+        this->registerProperty("on", NodeProperty(Device::MessageCallback(&OnOffFeature::onMessageReceived, this),
+            PropertyDataType::Boolean, "Switch"));
 
         debug_d("Initialized");
     }
@@ -38,7 +39,7 @@ public:
 
 protected:
     virtual void publishCurrentState() {
-        this->publish("", this->state ? ON : OFF, true);
+        this->publish("on", this->state ? ON : OFF, true);
     }
 
 private:

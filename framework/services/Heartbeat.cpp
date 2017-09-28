@@ -7,7 +7,7 @@ const char HEARTBEAT_NAME[] = "heartbeat";
 Heartbeat::Heartbeat(Device* const device)
         : Service(device) {
     // Receive heartbeat messages
-    this->device->registerSubscription(HEARTBEAT_TOPIC, Device::MessageCallback(&Heartbeat::onMessageReceived, this));
+    this->device->registerProperty(HEARTBEAT_TOPIC, NodeProperty(Device::MessageCallback(&Heartbeat::onMessageReceived, this), PropertyDataType::Command, ""));
 
     // Reboot the system if heartbeat was missing
     this->timer.initializeMs(120000, TimerDelegate(&Device::reboot, device));
