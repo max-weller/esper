@@ -55,6 +55,9 @@ int Update::onVersionReceived(HttpConnection& client, bool successful) {
 
     debugf("Remote version differs - updating...");
 
+    detachInterrupt(13);
+    detachInterrupt(14);
+
     // Select rom slot to flash
     const rboot_config bootconf = rboot_get_config();
 
