@@ -7,8 +7,8 @@
 
 template<const char* const name, uint16_t gpio, bool inverted>
 class Button : public Feature<name> {
-    constexpr static const char* const ON = "1";
-    constexpr static const char* const OFF = "0";
+    constexpr static const char* const ON = "true";
+    constexpr static const char* const OFF = "false";
 
 protected:
 
@@ -20,13 +20,15 @@ public:
             Feature<name>(device),
             state(false, callback) {
         attachInterrupt(gpio, Delegate<void()>(&Button::onInterrupt, this), CHANGE);
+
+        this->registerProperty("state", NodeProperty(NULL, PropertyDataType::Boolean, "Button Pressed"));
     }
 
 protected:
     virtual void publishCurrentState() {
         debug_d("Current state: %d", (bool)this->state);
 
-        this->publish("", this->state ? ON : OFF, true);
+        this->publish("state", this->state ? ON : OFF, true);
     }
 
     virtual bool onEdge(const bool& edge) = 0;
