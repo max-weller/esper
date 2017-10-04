@@ -4,6 +4,15 @@
 #include "Feature.h"
 
 
+static unsigned int hlw8012_mode;
+
+static uint32_t power_pulse_width;
+static uint32_t current_pulse_width;
+static uint32_t voltage_pulse_width;
+
+static uint32_t last_cf_interrupt;
+static uint32_t first_cf1_interrupt;
+static uint32_t last_cf1_interrupt;
 
 template<const char* const name, uint16_t gpio_sel, uint16_t gpio_cf, uint16_t gpio_cf1>
 class HLW8012 : public Feature<name> {
@@ -16,11 +25,17 @@ public:
         pinMode(gpio_sel, OUTPUT);
 
         // initialize to current mode
-        mode = MODE_CURRENT;
-        digitalWrite(gpio_sel, mode);
+        hlw8012_mode = MODE_CURRENT;
+        digitalWrite(gpio_sel, hlw8012_mode);
 
-        attachInterrupt(gpio_cf, Delegate<void()>(&HLW8012::cfInterrupt, this), FALLING);
-        attachInterrupt(gpio_cf1, Delegate<void()>(&HLW8012::cf1Interrupt, this), FALLING);
+        this->registerProperty("voltage", NodeProperty(NULL, PropertyDataType::Integer, "Voltage", "", "V"));
+        this->registerProperty("current", NodeProperty(NULL, PropertyDataType::Integer, "Current", "", "A"));
+        this->registerProperty("power_active", NodeProperty(NULL, PropertyDataType::Integer, "Active power", "", "W"));
+        this->registerProperty("power_apparent", NodeProperty(NULL, PropertyDataType::Integer, "Apparent power", "", "VA"));
+        this->registerProperty("power_reactive", NodeProperty(NULL, PropertyDataType::Integer, "Reactive power", "", "var"));
+
+        attachInterrupt(gpio_cf, &HLW8012::cfInterrupt, FALLING);
+        attachInterrupt(gpio_cf1, &HLW8012::cf1Interrupt, FALLING);
 
         this->republish.initializeMs(5000, TimerDelegate(&HLW8012::publishCurrentState, this));
         this->republish.start();
@@ -30,7 +45,7 @@ public:
 protected:
     void registerSubscriptions() {};
     void publishCurrentState() {
-        debugf("publishing state");
+        debugf("publishing state mode=%d", hlw8012_mode);
 
         this->publish("voltage", String(this->getVoltage()), false);
         this->publish("current", String(this->getCurrent()), false);
@@ -41,26 +56,11 @@ protected:
 
 private:
 
-    enum mode_t {
-        MODE_VOLTAGE = 0,
-        MODE_CURRENT = 1
-    };
 
     Timer republish;
 
-    unsigned int mode;
-
-    unsigned int power;
     unsigned int voltage;
     double current;
-
-    unsigned long power_pulse_width;
-    unsigned long current_pulse_width;
-    unsigned long voltage_pulse_width;
-
-    unsigned long last_cf_interrupt;
-    unsigned long first_cf1_interrupt;
-    unsigned long last_cf1_interrupt;
 
     const double voltage_multiplier = 1944.0;
     const double current_multiplier = 3500.0;
@@ -70,24 +70,30 @@ private:
     const double current_reference = 4350; // 4.35A
     const double power_reference = 10000; // 1000W
 
-    const unsigned int pulse_timeout = 2000000;
+    enum hlw8012_mode_t {
+        MODE_VOLTAGE = 0,
+        MODE_CURRENT = 1
+    };
+    static const unsigned int pulse_timeout = 2000000;
 
-    void toggleMode() {
-        mode = 1 - mode;
-        digitalWrite(gpio_sel, mode);
-        debugf("mode switched to %d", mode);
-        last_cf1_interrupt = first_cf1_interrupt = micros();
+    static IRAM_ATTR void toggleMode() {
+        hlw8012_mode = 1 - hlw8012_mode;
+
+        // pasted digitalWrite code here so no FLASH method has to be called...
+        GPIO_REG_WRITE((((hlw8012_mode != LOW) ? GPIO_OUT_W1TS_ADDRESS : GPIO_OUT_W1TC_ADDRESS)), (1<<gpio_sel));
+
+        last_cf1_interrupt = first_cf1_interrupt = system_get_time();
     }
 
-    void cfInterrupt() {
-        const unsigned long now = micros();
+    static IRAM_ATTR void cfInterrupt() {
+        const uint32_t now = system_get_time();
         power_pulse_width = now - last_cf_interrupt;
         last_cf_interrupt = now;
     };
 
-    void cf1Interrupt() {
-        const unsigned long now = micros();
-        unsigned long pulse_width;
+    static IRAM_ATTR void cf1Interrupt() {
+        const uint32_t now = system_get_time();
+        uint32_t pulse_width;
 
         if ((now - first_cf1_interrupt) > pulse_timeout) {
             // measure pulse width
@@ -98,7 +104,7 @@ private:
             }
 
             // assign pulse width depending on the mode
-            if (mode == MODE_CURRENT) {
+            if (hlw8012_mode == MODE_CURRENT) {
                 current_pulse_width = pulse_width;
             } else {
                 voltage_pulse_width = pulse_width;
@@ -114,9 +120,10 @@ private:
         last_cf1_interrupt = now;
     }
 
+
     double getCurrent() {
-        //this->publish("debug/current/pulse_width", String(current_pulse_width), false);
-        if (power == 0) {
+        debugf("getCurrent powerpulse=%d currentpulse=%d", power_pulse_width, current_pulse_width);
+        if (power_pulse_width == 0) {
             // power has a dedicated interrupt and therefore a snappier reaction
             // per P=U*I, if P=0, I must be 0 as well.
             current_pulse_width = 0;
@@ -132,7 +139,6 @@ private:
     }
 
     unsigned int getVoltage() {
-        //this->publish("debug/voltage/pulse_width", String(voltage_pulse_width), false);
         checkCF1();
 
         if (voltage_pulse_width > 0) {
@@ -187,8 +193,8 @@ private:
     }
 
     void checkCF1() {
-        if ((micros() - last_cf1_interrupt) > pulse_timeout) {
-            if (mode == MODE_CURRENT) {
+        if ((system_get_time() - last_cf1_interrupt) > pulse_timeout) {
+            if (hlw8012_mode == MODE_CURRENT) {
                 current_pulse_width = 0;
             } else {
                 voltage_pulse_width = 0;
