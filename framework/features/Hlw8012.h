@@ -56,6 +56,10 @@ protected:
 
 private:
 
+    enum hlw8012_mode_t {
+        MODE_VOLTAGE = 0,
+        MODE_CURRENT = 1
+    };
 
     Timer republish;
 
@@ -70,10 +74,6 @@ private:
     const double current_reference = 4350; // 4.35A
     const double power_reference = 10000; // 1000W
 
-    enum hlw8012_mode_t {
-        MODE_VOLTAGE = 0,
-        MODE_CURRENT = 1
-    };
     static const unsigned int pulse_timeout = 2000000;
 
     static IRAM_ATTR void toggleMode() {
@@ -81,7 +81,7 @@ private:
 
         // pasted digitalWrite code here so no FLASH method has to be called...
         GPIO_REG_WRITE((((hlw8012_mode != LOW) ? GPIO_OUT_W1TS_ADDRESS : GPIO_OUT_W1TC_ADDRESS)), (1<<gpio_sel));
-
+        debugf("mode switched to %d", mode);
         last_cf1_interrupt = first_cf1_interrupt = system_get_time();
     }
 
