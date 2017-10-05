@@ -60,11 +60,11 @@ void Device::start() {
     // Start connecting to the network
     this->wifiConnectionManager.connect();
 
-    debug_d("Started");
-
 #ifdef REMOTE_UDP_LOG_IP
     remote_udp_log_enable(IPAddress(REMOTE_UDP_LOG_IP), REMOTE_UDP_LOG_PORT);
 #endif
+
+    debug_d("Started");
 
 }
 
