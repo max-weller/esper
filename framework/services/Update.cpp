@@ -16,7 +16,6 @@ Update::Update(Device* device) :
         updater(nullptr) {
     // Receive update messages
     this->device->registerProperty(MQTT_REALM + String("/$broadcast/update"), NodeProperty(Device::MessageCallback(&Update::onUpdateRequestReceived, this), PropertyDataType::Command, ""));
-    this->device->registerProperty(Device::TOPIC_BASE + String("/$update"), NodeProperty(Device::MessageCallback(&Update::onUpdateRequestReceived, this), PropertyDataType::Command, ""));
 
     // Check for updates regularly
     this->timer.initializeMs(UPDATE_INTERVAL, TimerDelegate(&Update::checkUpdate, this));
