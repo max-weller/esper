@@ -81,7 +81,7 @@ private:
 
         // pasted digitalWrite code here so no FLASH method has to be called...
         GPIO_REG_WRITE((((hlw8012_mode != LOW) ? GPIO_OUT_W1TS_ADDRESS : GPIO_OUT_W1TC_ADDRESS)), (1<<gpio_sel));
-        debugf("mode switched to %d", mode);
+        debugf("mode switched to %d", hlw8012_mode);
         last_cf1_interrupt = first_cf1_interrupt = system_get_time();
     }
 
