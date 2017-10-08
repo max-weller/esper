@@ -88,9 +88,9 @@ void Info::publish() {
 #ifdef INFO_HTTP_ENABLED
 void Info::onHttpIndex(HttpRequest &request, HttpResponse &response) {
     response.setContentType("application/json");
-    //response.sendString(this->dump());
-    char buf[128];
-    sprintf(buf, "{\"System Chip ID\": \"0x%06x\"}", system_get_chip_id());
+    char buf[200];
+    sprintf(buf, "{\"System Chip ID\": \"0x%06x\", \"startupTime\":%u, \"connectTime\": %u, \"currentTime\": %u, \"uptime_us\": %u, \"heap\": %d}", 
+        system_get_chip_id(), this->startupTime, this->connectTime, RTC.getRtcSeconds(), system_get_time(), system_get_free_heap_size());
     response.sendString(buf);
 }
 #endif
