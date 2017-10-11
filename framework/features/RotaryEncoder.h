@@ -31,18 +31,17 @@ protected:
     }
 
 private:
-    virtual void onInterrupt()  {
+    uint8_t old_AB = 3;  //lookup table index
+    int8_t encval = 0;   //encoder value  
+    const int8_t enc_states [] = 
+        {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};  //encoder lookup table
+    void onInterrupt()  {
 
         // Handle Rotary Encoder logic
-        static uint8_t old_AB = 3;  //lookup table index
-        static int8_t encval = 0;   //encoder value  
-        const int8_t enc_states [] = 
-            {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};  //encoder lookup table
-        /**/
+        
         old_AB <<=2;  //remember previous state
         old_AB |= (digitalRead(gpio_a)<<1) | digitalRead(gpio_b);
         encval += enc_states[( old_AB & 0x0f )];
-        //debugf("intr %02x, %d", old_AB, encval);
 
         if (encval>3) {
             encval=0;
